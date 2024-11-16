@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronômetro Regressivo</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center;
+            margin: 0; /* Remove margens do body */
+            overflow: hidden; /* Garante que o conteúdo não saia da tela */
+            height: 100vh; /* Define altura da tela */
+			background-color: black;
+			color: #FFF;
+			margin-top: -5vh;
+        }
+        #timeDisplay { 
+            font-size: 25vw; /* Tamanho da fonte relativo à largura da viewport */
+            display: block; 
+            width: 100%; 
+            white-space: nowrap; /* Impede quebras de linha */
+            overflow: hidden; /* Oculta o que passar da largura */
+            text-overflow: ellipsis; /* Adiciona reticências se o texto for cortado */
+        }
+        #iframeContainer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60%; /* Ocupar 50% da altura da tela */
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none; /* Remove a borda do iframe */
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <span id="timeDisplay">00:00</span>
+    </div>
+    <div id="iframeContainer">
+        <iframe src="http://192.168.100.22:7070/musica?retorno"></iframe>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Chama a função para começar a atualizar o cronômetro ao carregar a página
+            updateDisplay();
+        });
+
+        document.getElementById('startButton')?.addEventListener('click', function() {
+            const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+            const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+            const totalSeconds = minutes * 60 + seconds;
+            fetch('/start_timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ time: totalSeconds })
+            });
+            document.getElementById('continueButton').style.display = 'none';
+        });
+
+        document.getElementById('stopButton')?.addEventListener('click', function() {
+            fetch('/stop_timer', {
+                method: 'POST'
+            });
+            document.getElementById('continueButton').style.display = 'inline';
+        });
+
+        document.getElementById('continueButton')?.addEventListener('click', function() {
+            fetch('/continue_timer', {
+                method: 'POST'
+            });
+            updateDisplay();
+            document.getElementById('continueButton').style.display = 'none';
+        });
+
+        function updateDisplay() {
+            setInterval(async () => {
+                const response = await fetch('/time_remaining');
+                const data = await response.json();
+                const minutes = Math.floor(data.time_remaining / 60);
+                const seconds = data.time_remaining % 60;
+                document.getElementById('timeDisplay').innerText = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 250);
+        }
+    </script>
+</body>
+</html>

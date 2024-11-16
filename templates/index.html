@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronômetro Regressivo</title>
+	<style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        #timeDisplay { font-size: 48px; }
+    </style>
+</head>
+<body>
+    <h1>Cronômetro Regressivo</h1>
+    <div>
+        <span id="timeDisplay">00:00</span>
+    </div>
+    <input type="number" id="minutesInput" placeholder="Minutos" min="0">
+    <input type="number" id="secondsInput" placeholder="Segundos" min="0" max="59">
+    <button id="startButton">Iniciar</button>
+    <button id="stopButton">Parar</button>
+    <button id="continueButton" style="display: none;">Continuar</button>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Chama a função para começar a atualizar o cronômetro ao carregar a página
+            updateDisplay();
+        });
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            const minutes = parseInt(document.getElementById('minutesInput').value) || 0;
+            const seconds = parseInt(document.getElementById('secondsInput').value) || 0;
+            const totalSeconds = minutes * 60 + seconds;
+            fetch('/start_timer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ time: totalSeconds })
+            });
+            document.getElementById('continueButton').style.display = 'none';
+        });
+
+        document.getElementById('stopButton').addEventListener('click', function() {
+            fetch('/stop_timer', {
+                method: 'POST'
+            });
+            document.getElementById('continueButton').style.display = 'inline';
+        });
+
+        document.getElementById('continueButton').addEventListener('click', function() {
+            fetch('/continue_timer', {
+                method: 'POST'
+            });
+            updateDisplay();
+            document.getElementById('continueButton').style.display = 'none';
+        });
+
+        function updateDisplay() {
+            setInterval(async () => {
+                const response = await fetch('/time_remaining');
+                const data = await response.json();
+                const minutes = Math.floor(data.time_remaining / 60);
+                const seconds = data.time_remaining % 60;
+                document.getElementById('timeDisplay').innerText = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 250);
+        }
+    </script>
+</body>
+</html>
